@@ -9,15 +9,15 @@ def compile_verilog():
     verilog_code = request.json.get('code', '')
 
     # 将 Verilog 代码写入到临时文件中
-    with open('temp.v', 'w') as f:
+    with open('test-temp.v', 'w') as f:
         f.write(verilog_code)
 
     # 调用 Icarus Verilog 编译 Verilog 代码
-    result = subprocess.run(['iverilog', '-o', 'temp.out', 'temp.v'], capture_output=True)
+    result = subprocess.run(['iverilog', '-o', 'test-temp.out', 'test-temp.v'], capture_output=True)
 
     # 返回编译结果
     if result.returncode == 0:
-        return jsonify({'success': True, 'message': 'Verilog code compiled successfully.', 'output_file': 'temp.out'})
+        return jsonify({'success': True, 'message': 'Verilog code compiled successfully.', 'output_file': 'test-temp.out'})
     else:
         return jsonify({'success': False, 'message': 'Error compiling Verilog code.', 'stderr': result.stderr.decode()})
 
