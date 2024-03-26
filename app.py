@@ -1,25 +1,38 @@
+from pyngrok import ngrok
 import subprocess
-from flask import Flask, request, jsonify
+import os
+import zipfile
+from flask import Flask, request, jsonify, send_file
+
+ngrok.set_auth_token('2eDyjBG5ZCqmkkjSY7mZ0yJmeca_LkQWYUdQw6rneRjtrrpn')
 
 app = Flask(__name__)
 
+@app.route('/')
+def index():
+    return 'Server is running'
+
 @app.route('/compile', methods=['POST'])
 def compile_verilog():
-    # 从请求中获取 Verilog 代码
-    verilog_code = request.json.get('code', '')
 
-    # 将 Verilog 代码写入到临时文件中
-    with open('temp.v', 'w') as f:
-        f.write(verilog_code)
+    verilog_file = request.files['file']
 
-    # 调用 Icarus Verilog 编译 Verilog 代码
-    result = subprocess.run(['iverilog', '-o', 'temp.out', 'temp.v'], capture_output=True)
+    verilog_file_path = 'temp.v'
+    verilog_file.save(verilog_file_path)
 
-    # 返回编译结果
+    result = subprocess.run(['iverilog', '-o', 'temp.out', verilog_file_path], capture_output=True, text=True)
+
     if result.returncode == 0:
-        return jsonify({'success': True, 'message': 'Verilog code compiled successfully.'})
+        zip_file_path = 'compiled_files.zip'
+        with zipfile.ZipFile(zip_file_path, 'w') as zipf:
+            zipf.write('temp.out')
+
+        return send_file(zip_file_path, as_attachment=True)
     else:
-        return jsonify({'success': False, 'message': 'Error compiling Verilog code.', 'stderr': result.stderr.decode()})
+        return jsonify({'success': False, 'message': 'Error compiling Verilog code.', 'stderr': result.stderr})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    public_url = ngrok.connect(5000)
+    print(" * ngrok tunnel \"{}\" -> \"http://127.0.0.1:5000\"".format(public_url))
+    
+    app.run(host='127.0.0.1', port=5000)

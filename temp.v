@@ -1,8 +1,4 @@
-
-module test;
-  reg clk;
-  initial begin
-    clk = 0;
-    forever #5 clk = ~clk;
-  end
+module full_adder(input A, input B, input Cin, output S, output Cout);
+    assign S = A ^ B ^ Cin;
+    assign Cout = (A & B) | (B & Cin) | (A & Cin);
 endmodule
