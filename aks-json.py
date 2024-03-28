@@ -48,6 +48,8 @@ def compile_verilog():
             "VVP Message" : vpp_message
         }
     else:
+        with open(compile_file_name, 'w') as f:
+            f.write(result.stderr)
         compilation_result = {
             "Error Message"  : result.stderr
         }
