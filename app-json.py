@@ -1,8 +1,7 @@
 from pyngrok import ngrok
 import subprocess
 import os
-import zipfile
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify
 
 ngrok.set_auth_token('2eDyjBG5ZCqmkkjSY7mZ0yJmeca_LkQWYUdQw6rneRjtrrpn')
 
@@ -14,22 +13,28 @@ def index():
 
 @app.route('/compile', methods=['POST'])
 def compile_verilog():
-
     verilog_file = request.files['file']
-
-    verilog_file_path = 'temp.json'
+    verilog_file_path = 'temp.v'
     verilog_file.save(verilog_file_path)
 
     result = subprocess.run(['iverilog', '-o', 'temp.out', verilog_file_path], capture_output=True, text=True)
 
     if result.returncode == 0:
-        zip_file_path = 'compiled_files.zip'
-        with zipfile.ZipFile(zip_file_path, 'w') as zipf:
-            zipf.write('temp.out')
-
-        return send_file(zip_file_path, as_attachment=True)
+        # Compile successful, construct JSON response
+        response_data = {
+            'success': True,
+            'message': 'Compilation successful',
+            'compiled_file': 'temp.out'
+        }
     else:
-        return jsonify({'success': False, 'message': 'Error compiling Verilog code.', 'stderr': result.stderr})
+        # Compilation failed, construct JSON response with error message
+        response_data = {
+            'success': False,
+            'message': 'Error compiling Verilog code.',
+            'stderr': result.stderr
+        }
+
+    return jsonify(response_data)
 
 if __name__ == '__main__':
     public_url = ngrok.connect(5000)
